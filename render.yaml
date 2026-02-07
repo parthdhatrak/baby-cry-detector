@@ -3,15 +3,15 @@ services:
     name: baby-cry-detector
     env: python
     buildCommand: "sh build.sh"
-    startCommand: "gunicorn crybaby.wsgi"
+    startCommand: "gunicorn crybaby.wsgi --workers 2 --threads 4 --timeout 120"
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
-      - key: PYTHON_VERSION
-        value: "3.10.12"
-      - key: ALLOWED_HOSTS
-        value: "*"
       - key: DEBUG
         value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: PYTHON_VERSION
+        value: "3.10.12"
       - key: CRY_DETECTION_API_KEY
         value: "dev-api-key-change-in-production"

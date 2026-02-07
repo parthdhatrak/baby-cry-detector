@@ -1,1 +1,1 @@
-web: gunicorn crybaby.wsgi --workers 2 --threads 4 --timeout 120 --log-file -
+web: gunicorn crybaby.wsgi --workers 1 --timeout 180 --log-file -
