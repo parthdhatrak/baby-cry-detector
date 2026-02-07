@@ -2,17 +2,18 @@ services:
   - type: web
     name: baby-cry-detector
     env: python
-    buildCommand: "./build.sh"
+    region: ohio
+    plan: starter
+    buildCommand: "sh build.sh"
     startCommand: "gunicorn crybaby.wsgi --workers 2 --threads 4 --timeout 120"
-    plan: starter # ML models usually need more than 512MB (Free Tier)
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: "False"
-      - key: CRY_DETECTION_API_KEY
-        sync: false # You will need to set this in Render UI
-      - key: PYTHON_VERSION
-        value: "3.10.12"
       - key: ALLOWED_HOSTS
         value: "*"
+      - key: PYTHON_VERSION
+        value: "3.10.12"
+      - key: CRY_DETECTION_API_KEY
+        value: "dev-api-key-change-in-production"
