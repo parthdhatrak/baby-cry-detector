@@ -1,1 +1,1 @@
-web: gunicorn crybaby.wsgi --workers 1 --timeout 180 --log-file -
+web: gunicorn crybaby.wsgi --bind 0.0.0.0:$PORT --workers 1 --timeout 180
