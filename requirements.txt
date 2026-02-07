@@ -1,0 +1,8 @@
+django
+gunicorn
+whitenoise
+librosa
+numpy
+tensorflow
+h5py
+python-dotenv

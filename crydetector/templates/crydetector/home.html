@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Baby Cry Reason Detection - AI-powered analysis to identify why your baby is crying">
+    <title>Baby Cry Detector - AI-Powered Cry Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --bg-gradient-start: #0f0f23;
+            --bg-gradient-end: #1a1a3e;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --hungry: #f59e0b;
+            --belly-pain: #ef4444;
+            --burping: #8b5cf6;
+            --discomfort: #f97316;
+            --tired: #6366f1;
+
+            /* Logic Aliases */
+            --accent-primary: var(--primary);
+
+            /* Underscore versions to match backend keys */
+            --belly_pain: var(--belly-pain);
+        }
+
+        /* Category helper classes to avoid inline style linter issues */
+        .bg-hungry {
+            background-color: var(--hungry) !important;
+        }
+
+        .bg-belly_pain {
+            background-color: var(--belly-pain) !important;
+        }
+
+        .bg-burping {
+            background-color: var(--burping) !important;
+        }
+
+        .bg-discomfort {
+            background-color: var(--discomfort) !important;
+        }
+
+        .bg-tired {
+            background-color: var(--tired) !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-circle:nth-child(1) {
+            width: 600px;
+            height: 600px;
+            top: -200px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-circle:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            animation-delay: -5s;
+        }
+
+        .bg-circle:nth-child(3) {
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+
+            50% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+
+            75% {
+                transform: translate(20px, 30px) scale(1.05);
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 10px 60px rgba(99, 102, 241, 0.5);
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--card-border);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 20px;
+            padding: 15px 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-light);
+        }
+
+        .file-name.visible {
+            display: flex;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 40px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        /* Result styles */
+        .result-card {
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+
+        .result-icon.crying {
+            background: linear-gradient(135deg, var(--warning) 0%, var(--error) 100%);
+        }
+
+        .result-icon.not-crying {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .result-subtitle {
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .reason-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 30px;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .reason-badge.hungry {
+            background: linear-gradient(135deg, var(--hungry), #d97706);
+        }
+
+        .reason-badge.belly_pain {
+            background: linear-gradient(135deg, var(--belly-pain), #dc2626);
+        }
+
+        .reason-badge.burping {
+            background: linear-gradient(135deg, var(--burping), #7c3aed);
+        }
+
+        .reason-badge.discomfort {
+            background: linear-gradient(135deg, var(--discomfort), #ea580c);
+        }
+
+        .reason-badge.tired {
+            background: linear-gradient(135deg, var(--tired), #4f46e5);
+        }
+
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            transition: width 1s ease;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Error styles */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .warning-message {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Model status */
+        .model-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+
+        .model-status.available {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .model-status.unavailable {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        .model-status.available .status-dot {
+            background: var(--success);
+        }
+
+        .model-status.unavailable .status-dot {
+            background: var(--warning);
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Tips section */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tip-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .tip-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .tip-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .tip-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .tip-desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Loading state */
+        .loading-spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn.loading .loading-spinner {
+            display: block;
+        }
+
+        .btn.loading .btn-text {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 25px 20px;
+            }
+
+            .upload-area {
+                padding: 40px 20px;
+            }
+
+            .result-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation">
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">👶</div>
+            </div>
+            <h1>Baby Cry Detector</h1>
+            <p class="subtitle">AI-powered analysis to understand why your baby is crying</p>
+
+            {% if model_available %}
+            <div class="model-status available">
+                <span class="status-dot"></span>
+                Model Active
+            </div>
+            {% else %}
+            <div class="model-status unavailable">
+                <span class="status-dot"></span>
+                Demo Mode
+            </div>
+            {% endif %}
+        </header>
+
+        {% if error %}
+        <div class="card result-card">
+            <div class="error-message">
+                <span style="font-size: 24px;">⚠️</span>
+                <span>{{ error }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="card result-card">
+            <div class="result-header">
+                {% if result.is_crying %}
+                <div class="result-icon crying">😢</div>
+                <div>
+                    <div class="result-title">Crying Detected</div>
+                    <div class="result-subtitle">We identified a potential reason</div>
+                </div>
+                {% else %}
+                <div class="result-icon not-crying">😊</div>
+                <div>
+                    <div class="result-title">Low Confidence Detection</div>
+                    <div class="result-subtitle">Could not confidently identify cry reason</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if result.is_crying and result.predicted_label %}
+            <div class="reason-badge {{ result.predicted_label }}">
+                {% if result.predicted_label == 'hungry' %}
+                🍼 Hungry
+                {% elif result.predicted_label == 'belly_pain' %}
+                😣 Belly Pain
+                {% elif result.predicted_label == 'burping' %}
+                💨 Needs Burping
+                {% elif result.predicted_label == 'discomfort' %}
+                😖 Discomfort
+                {% elif result.predicted_label == 'tired' %}
+                😴 Tired
+                {% endif %}
+            </div>
+
+            {% if result.reason %}
+            <div
+                style="margin-top: 15px; margin-bottom: 25px; padding: 15px; background: rgba(99,102,241,0.1); border-left: 4px solid var(--primary); border-radius: 4px; text-align: left;">
+                <strong
+                    style="display: block; color: var(--primary); margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🤖
+                    Analysis Reasoning</strong>
+                <p
+                    style="font-size: 1rem; line-height: 1.5; color: var(--text-primary); font-style: italic; margin: 0;">
+                    "{{ result.reason }}"</p>
+            </div>
+            {% endif %}
+
+            <div style="margin-bottom: 25px;">
+                <strong>Confidence Score</strong>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="mainConfidence" style="width: 0%;"></div>
+                </div>
+                <div class="confidence-label">
+                    <span>0%</span>
+                    <span id="confidenceValue">{{ result.confidence }}</span>
+                    <span>100%</span>
+                </div>
+            </div>
+
+            <!-- FIX: Display all class probabilities -->
+            {% if result.probabilities %}
+            <div style="margin-top: 20px;">
+                <strong style="display: block; margin-bottom: 15px;">All Class Probabilities</strong>
+                {% for class_name, probability in result.probabilities.items %}
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="text-transform: capitalize;">
+                            {% if class_name == 'hungry' %}🍼
+                            {% elif class_name == 'belly_pain' %}😣
+                            {% elif class_name == 'burping' %}💨
+                            {% elif class_name == 'discomfort' %}😖
+                            {% else %}😴{% endif %}
+                            {{ class_name|cut:"_" }}
+                        </span>
+                        <span>{{ probability|floatformat:2 }}%</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 6px; height: 8px; overflow: hidden;">
+                        <div class="prob-bar bg-{{ class_name }}" data-prob="{{ probability }}"
+                            style="height: 100%; border-radius: 6px; width: 0%; transition: width 0.8s ease;">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if result.warning %}
+            <div class="warning-message">
+                ⚠️ {{ result.warning }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">🎤</div>
+                    <div class="upload-text">Drop your audio file here</div>
+                    <div class="upload-hint">or click to browse (WAV format only)</div>
+                    <input type="file" name="audio_file" accept=".wav,audio/wav" class="file-input" id="fileInput">
+                </div>
+
+                <div class="file-name" id="fileName">
+                    <span>📎</span>
+                    <span id="fileNameText"></span>
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        <span class="loading-spinner"></span>
+                        <span class="btn-text">🔍 Analyze Cry</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 10px;">Understanding Cry Reasons</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Our AI can detect these common reasons for
+                crying:</p>
+
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <div class="tip-icon">🍼</div>
+                    <div class="tip-title">Hungry</div>
+                    <div class="tip-desc">Baby needs feeding</div>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-icon">😣</div>
+                    <div class="tip-title">Belly Pain</div>
+                    <div class="tip-desc">Stomach discomfort</div>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-icon">💨</div>
+                    <div class="tip-title">Burping</div>
+                    <div class="tip-desc">Needs to release gas</div>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-icon">😖</div>
+                    <div class="tip-title">Discomfort</div>
+                    <div class="tip-desc">General discomfort</div>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-icon">😴</div>
+                    <div class="tip-title">Tired</div>
+                    <div class="tip-desc">Needs rest or sleep</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with ❤️ using Django &amp; TensorFlow</p>
+            <p style="margin-top: 5px; opacity: 0.7;">Note: This is an AI tool and should not replace professional
+                medical advice.</p>
+        </footer>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const fileNameText = document.getElementById('fileNameText');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.name.toLowerCase().endsWith('.wav')) {
+                alert('Please upload a WAV file');
+                return;
+            }
+
+            fileNameText.textContent = file.name;
+            fileName.classList.add('visible');
+            submitBtn.disabled = false;
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', () => {
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+        });
+
+        // FIX: Animate confidence bars on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animate main confidence bar
+            const mainConfidence = document.getElementById('mainConfidence');
+            const confidenceValue = document.getElementById('confidenceValue');
+
+            if (mainConfidence && confidenceValue) {
+                const confidence = parseFloat(confidenceValue.textContent);
+                // Convert decimal (0-1) to percentage
+                const percentage = confidence <= 1 ? confidence * 100 : confidence;
+
+                setTimeout(() => {
+                    mainConfidence.style.width = percentage + '%';
+                }, 100);
+
+                // Update display text
+                confidenceValue.textContent = percentage.toFixed(1) + '%';
+            }
+
+            // Animate probability bars
+            const probBars = document.querySelectorAll('.prob-bar');
+            probBars.forEach((bar, index) => {
+                const prob = parseFloat(bar.dataset.prob);
+                // Convert decimal to percentage
+                const percentage = prob <= 1 ? prob * 100 : prob;
+
+                setTimeout(() => {
+                    bar.style.width = percentage + '%';
+                }, 100 + (index * 100));
+            });
+        });
+    </script>
+</body>
+
+</html>
